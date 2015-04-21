@@ -50,7 +50,7 @@ RedisPool.prototype._initialize = function _initialize() {
     var self = this;
     var redisSettings = self._redis_options;
     var poolSettings = self._pool_options;
-    
+
     // Build new Redis database clients.
     poolSettings["create"] = function Create(cb) {
         var client = null;
@@ -59,12 +59,12 @@ RedisPool.prototype._initialize = function _initialize() {
         if (self._redis_unix_socket != null) {
             client = redis.createClient(self._redis_unix_socket, null, self._redis_options);
         } else {
-            client = redis.createClient(self._redis_port, self._redis_host, self._redis_options);    
+            client = redis.createClient(self._redis_port, self._redis_host, self._redis_options);
         }
-        
+
         // Handle client connection errors.
         client.on("error", clientErrorCallback);
-        
+
         function clientErrorCallback(err) {
             // Emit client connection errors to connection pool users.
             self.emit("error", err);
@@ -74,16 +74,18 @@ RedisPool.prototype._initialize = function _initialize() {
         if (redisSettings.auth_pass) {
             client.auth(redisSettings.auth_pass);
         }
-        
+
         cb(null, client);
     }
-    
+
     // The destroy function is called when client connection needs to be closed.
     poolSettings["destroy"] = function destroyClient(client) {
-        client.end();
+        if(client) {
+            client.end();
+        }
         self.emit("destroy", null);
     }
-    
+
     // Now that the pool settings are ready create a pool instance.
     self._pool = Pool(poolSettings);
     return this;
@@ -104,7 +106,7 @@ RedisPool.prototype.drain = function drainRedisPool(cb) {
     self._pool.drain(function() {
         self._pool.destroyAllNow();
         if (isFunction(cb)) {
-            cb();    
+            cb();
         }
     });
 }
@@ -127,7 +129,7 @@ RedisPool.prototype.availableObjectsCount = function availableObjectsCount() {
 
 // Returns number of callers waiting to acquire a resource
 RedisPool.prototype.waitingClientsCount = function waitingClientsCount() {
-    return this._pool.waitingClientsCount();    
+    return this._pool.waitingClientsCount();
 }
 
 // Export this module.
